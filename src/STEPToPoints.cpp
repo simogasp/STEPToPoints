@@ -435,21 +435,86 @@ auto sampleShape(const TopoDS_Shape& shape, const double sampling) -> std::vecto
 }
 
 /**
- * @brief Attempts to parse a string as a solid index (1-based).
+ * @brief Generates a vector of indices from a range.
+ *
+ * @param start The start index (1-based, inclusive).
+ * @param end The end index (1-based, inclusive).
+ * @return std::vector<std::size_t> Vector of zero-based indices.
+ */
+auto generateRange(std::size_t start, std::size_t end) -> std::vector<std::size_t>
+{
+    std::vector<std::size_t> indices;
+    indices.reserve(end - start + 1);
+    for(auto i = start; i <= end; ++i)
+    {
+        indices.push_back(i - 1); // Convert to zero-based
+    }
+    return indices;
+}
+
+/**
+ * @brief Parses a range string (e.g., "3-7") into start and end indices.
  *
  * @param sel The string to parse.
- * @param maxIndex The maximum valid index (size of the namedSolids vector).
- * @return std::optional<size_t> The zero-based index if valid, std::nullopt otherwise.
+ * @return std::optional<std::pair<std::size_t, std::size_t>> Pair of (start, end) if valid, std::nullopt otherwise.
  */
-auto parseSolidIndex(const std::string& sel, std::size_t maxIndex) -> std::optional<std::size_t>
+auto parseRange(const std::string& sel) -> std::optional<std::pair<std::size_t, std::size_t>>
 {
+    if(const auto dashPos = sel.find('-'); dashPos != std::string::npos && dashPos > 0)
+    {
+        try
+        {
+            const auto start = std::stoul(sel.substr(0, dashPos));
+            const auto end = std::stoul(sel.substr(dashPos + 1));
+
+            if(start >= 1 && start <= end)
+            {
+                return std::make_pair(start, end);
+            }
+        }
+        catch(const std::invalid_argument&)
+        {
+            std::cerr << "Invalid range format: " << sel << "\n";
+        }
+        catch(const std::out_of_range&)
+        {
+            std::cerr << "Range values out of bounds: " << sel << "\n";
+        }
+    }
+    return std::nullopt;
+}
+
+/**
+ * @brief Attempts to parse a string as a solid index (1-based) or a range.
+ *
+ * @param sel The string to parse containing either an index (e.g."3") or a range (e.g."3-7").
+ * @param maxIndex The maximum valid index (size of the namedSolids vector).
+ * @return std::optional<std::vector<size_t>> Vector of zero-based indices if valid, std::nullopt otherwise.
+ */
+auto parseSolidIndex(const std::string& sel, std::size_t maxIndex) -> std::optional<std::vector<std::size_t>>
+{
+    // Try parsing as range first
+    if(const auto range = parseRange(sel))
+    {
+        const auto [start, end] = range.value();
+
+        if(end > maxIndex)
+        {
+            std::cerr << "Range end exceeds max index: " << end << " > " << maxIndex << "\n";
+            return std::nullopt;
+        }
+
+        return generateRange(start, end);
+    }
+
     try
     {
         if(const auto index = std::stoul(sel);
             index >= 1 && index <= maxIndex)
         {
-            return index - 1; // Convert to zero-based
+            return {{index - 1}};
         }
+        std::cerr << "Index out of valid range: " << sel << "\n";
     }
     catch(const std::invalid_argument&)
     {
@@ -486,13 +551,13 @@ auto findSolidByName(const std::vector<NamedSolid>& namedSolids, const std::stri
 /**
  * @brief Resolves a selection string to a solid.
  *
- * @param sel The selection string (either a name starting with '/' or a 1-based index).
+ * @param sel The selection string (either a name starting with '/' or a 1-based index or range).
  * @param namedSolids The vector of all available named solids.
- * @return const NamedSolid& Reference to the selected solid.
+ * @return std::vector<std::reference_wrapper<const NamedSolid>> List of references to the selected solid(s).
  * @throws std::invalid_argument If the selection cannot be resolved.
  */
 auto resolveSolidSelection(const std::string& sel, const std::vector<NamedSolid>& namedSolids)
-    -> const NamedSolid&
+    -> std::vector<std::reference_wrapper<const NamedSolid>>
 {
     if(sel.empty())
     {
@@ -504,15 +569,21 @@ auto resolveSolidSelection(const std::string& sel, const std::vector<NamedSolid>
     {
         if(const auto found = findSolidByName(namedSolids, sel))
         {
-            return found->get();
+            return {found->get()};
         }
         throw std::invalid_argument{std::format("Could not find solid with name '{}'", sel)};
     }
 
     // Try to parse as index
-    if(const auto index = parseSolidIndex(sel, namedSolids.size()); index.has_value())
+    if(const auto indices = parseSolidIndex(sel, namedSolids.size()); indices.has_value())
     {
-        return namedSolids[index.value()];
+        std::vector<std::reference_wrapper<const NamedSolid>> result;
+        result.reserve(indices->size());
+        for(const auto idx : indices.value())
+        {
+            result.emplace_back(std::cref(namedSolids[idx]));
+        }
+        return result;
     }
 
     throw std::invalid_argument{std::format("Invalid selection: '{}' (not a valid name or index)", sel)};
@@ -550,8 +621,11 @@ auto buildCompoundFromSelections(const std::vector<NamedSolid>& namedSolids,
             if(!sel.empty())
             {
                 const auto& selectedSolid = resolveSolidSelection(sel, namedSolids);
-                std::cout << "Adding solid: " << selectedSolid.name << "\n";
-                builder.Add(compound, selectedSolid.solid);
+                for(const auto& solid : selectedSolid)
+                {
+                    std::cout << "Adding solid: " << solid.get().name << "\n";
+                    builder.Add(compound, solid.get().solid);
+                }
             }
         }
     }
