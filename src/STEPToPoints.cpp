@@ -47,6 +47,7 @@
 #include "cxxopts.hpp"
 #include "Timer.hpp"
 #include "happly.hpp"
+#include "solid_index_parser.hpp"
 #include <algorithm>
 #include <vector>
 #include <set>
@@ -432,99 +433,6 @@ auto sampleShape(const TopoDS_Shape& shape, const double sampling) -> std::vecto
         std::ranges::copy(r, std::back_inserter(result));
     }
     return result;
-}
-
-/**
- * @brief Generates a vector of indices from a range.
- *
- * @param start The start index (1-based, inclusive).
- * @param end The end index (1-based, inclusive).
- * @return std::vector<std::size_t> Vector of zero-based indices.
- */
-auto generateRange(std::size_t start, std::size_t end) -> std::vector<std::size_t>
-{
-    std::vector<std::size_t> indices;
-    indices.reserve(end - start + 1);
-    for(auto i = start; i <= end; ++i)
-    {
-        indices.push_back(i - 1); // Convert to zero-based
-    }
-    return indices;
-}
-
-/**
- * @brief Parses a range string (e.g., "3-7") into start and end indices.
- *
- * @param sel The string to parse.
- * @return std::optional<std::pair<std::size_t, std::size_t>> Pair of (start, end) if valid, std::nullopt otherwise.
- */
-auto parseRange(const std::string& sel) -> std::optional<std::pair<std::size_t, std::size_t>>
-{
-    if(const auto dashPos = sel.find('-'); dashPos != std::string::npos && dashPos > 0)
-    {
-        try
-        {
-            const auto start = std::stoul(sel.substr(0, dashPos));
-            const auto end = std::stoul(sel.substr(dashPos + 1));
-
-            if(start >= 1 && start <= end)
-            {
-                return std::make_pair(start, end);
-            }
-        }
-        catch(const std::invalid_argument&)
-        {
-            std::cerr << "Invalid range format: " << sel << "\n";
-        }
-        catch(const std::out_of_range&)
-        {
-            std::cerr << "Range values out of bounds: " << sel << "\n";
-        }
-    }
-    return std::nullopt;
-}
-
-/**
- * @brief Attempts to parse a string as a solid index (1-based) or a range.
- *
- * @param sel The string to parse containing either an index (e.g."3") or a range (e.g."3-7").
- * @param maxIndex The maximum valid index (size of the namedSolids vector).
- * @return std::optional<std::vector<size_t>> Vector of zero-based indices if valid, std::nullopt otherwise.
- */
-auto parseSolidIndex(const std::string& sel, std::size_t maxIndex) -> std::optional<std::vector<std::size_t>>
-{
-    // Try parsing as range first
-    if(const auto range = parseRange(sel))
-    {
-        const auto [start, end] = range.value();
-
-        if(end > maxIndex)
-        {
-            std::cerr << "Range end exceeds max index: " << end << " > " << maxIndex << "\n";
-            return std::nullopt;
-        }
-
-        return generateRange(start, end);
-    }
-
-    try
-    {
-        if(const auto index = std::stoul(sel);
-            index >= 1 && index <= maxIndex)
-        {
-            return {{index - 1}};
-        }
-        std::cerr << "Index out of valid range: " << sel << "\n";
-    }
-    catch(const std::invalid_argument&)
-    {
-        std::cerr << "Invalid index provided: " << sel << "\n";
-    }
-    catch(const std::out_of_range&)
-    {
-        std::cerr << "Index out of range: " << sel << "\n";
-    }
-    return std::nullopt;
 }
 
 /**

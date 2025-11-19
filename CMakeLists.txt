@@ -97,7 +97,7 @@ else()
     message(STATUS "OpenMP not found")
 endif()
 
-add_executable(STEPToPoints src/STEPToPoints.cpp)
+add_executable(STEPToPoints src/STEPToPoints.cpp src/solid_index_parser.cpp)
 
 # @TODO: check which OpenCASCADE libraries are really needed
 target_link_libraries(STEPToPoints ${OpenCASCADE_FoundationClasses_LIBRARIES} ${OpenCASCADE_ModelingData_LIBRARIES} ${OpenCASCADE_ModelingAlgorithms_LIBRARIES} ${OpenCASCADE_Visualization_LIBRARIES} ${OpenCASCADE_ApplicationFramework_LIBRARIES} ${OpenCASCADE_DataExchange_LIBRARIES} ${OpenCASCADE_Draw_LIBRARIES} indicators::indicators) #
