@@ -26,6 +26,8 @@ cmake_minimum_required (VERSION 3.18)
 
 project (STEPToPoints LANGUAGES CXX VERSION 2025.0.0)
 
+option(BUILD_TESTS "Build tests" ON)
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug;Release;RelWithDebInfo;MinSizeRel")
@@ -109,3 +111,8 @@ endif()
 target_compile_options(STEPToPoints PRIVATE ${MY_COMPILE_OPTIONS})
 target_compile_definitions(STEPToPoints PUBLIC ${MY_COMPILE_DEFINITIONS})
 target_compile_features(STEPToPoints PRIVATE ${MY_CXX_FEATURE})
+
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
