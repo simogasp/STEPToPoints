@@ -54,11 +54,13 @@ jobs:
     - name: Build (Release)
       uses: lukka/run-cmake@v10
       with:
-        configurePreset: 'release-preset'
-        buildPreset: 'release-preset'
+        configurePreset: 'vcpkg-release'
+        buildPreset: 'vcpkg-release'
+        testPreset: 'vcpkg-release'
 
     - name: Build (Debug)
       uses: lukka/run-cmake@v10
       with:
-        configurePreset: 'debug-preset'
-        buildPreset: 'debug-preset'
+        configurePreset: 'vcpkg-debug'
+        buildPreset: 'vcpkg-debug'
+        testPreset: 'vcpkg-debug'
