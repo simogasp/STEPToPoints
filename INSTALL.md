@@ -27,3 +27,4 @@ cmake -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake ..
 # this will take a while as it will download and build all the necessary dependencies
 # now we can build the project
 cmake --build . --config Release
+```
