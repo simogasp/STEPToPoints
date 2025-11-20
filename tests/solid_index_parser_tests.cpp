@@ -146,6 +146,27 @@ TEST(ParseRangeValueTest, ConsecutiveCalls)
 }
 
 // ============================================================================
+// Tests for validateRangeBounds()
+// ============================================================================
+
+TEST(ValidateRangeBoundsTest, ValidBounds)
+{
+    EXPECT_TRUE(validateRangeBounds(1, 1));      // Single element
+    EXPECT_TRUE(validateRangeBounds(1, 5));      // Normal range
+    EXPECT_TRUE(validateRangeBounds(1, 100));    // Large range
+    EXPECT_TRUE(validateRangeBounds(5, 10));     // Mid-range
+    EXPECT_TRUE(validateRangeBounds(100, 200));  // Large values
+}
+
+TEST(ValidateRangeBoundsTest, InvalidBounds)
+{
+    EXPECT_FALSE(validateRangeBounds(0, 5));     // Start is zero
+    EXPECT_FALSE(validateRangeBounds(0, 0));     // Both zero
+    EXPECT_FALSE(validateRangeBounds(5, 3));     // End before start
+    EXPECT_FALSE(validateRangeBounds(10, 5));    // End well before start
+}
+
+// ============================================================================
 // Tests for parseRange()
 // ============================================================================
 

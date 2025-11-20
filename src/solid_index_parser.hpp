@@ -30,6 +30,15 @@ auto validateRangeString(const std::string& str) -> bool;
 auto parseRangeValue(const std::string& str, const std::string& fullInput) -> std::optional<std::size_t>;
 
 /**
+ * @brief Validates that a range has valid bounds (start >= 1 and start <= end).
+ *
+ * @param start The start value.
+ * @param end The end value.
+ * @return bool True if bounds are valid, false otherwise.
+ */
+auto validateRangeBounds(std::size_t start, std::size_t end) -> bool;
+
+/**
  * @brief Parses a range string (e.g., "3-7") into start and end indices.
  *
  * @param sel The string to parse.

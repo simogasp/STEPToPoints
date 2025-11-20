@@ -49,6 +49,12 @@ auto parseRangeValue(const std::string& str, const std::string& fullInput) -> st
 }
 
 
+auto validateRangeBounds(std::size_t start, std::size_t end) -> bool
+{
+    return start >= 1 && start <= end;
+}
+
+
 auto parseRange(const std::string& sel) -> std::optional<std::pair<std::size_t, std::size_t>>
 {
     const auto dashPos = sel.find('-');
@@ -74,9 +80,9 @@ auto parseRange(const std::string& sel) -> std::optional<std::pair<std::size_t, 
         return std::nullopt;
     }
 
-    if(start.value() >= 1 && start.value() <= end.value())
+    if(validateRangeBounds(start.value(), end.value()))
     {
-        return std::make_pair(start.value(), end.value());
+        return {{start.value(), end.value()}};
     }
 
     return std::nullopt;
