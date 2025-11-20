@@ -46,6 +46,106 @@ TEST(GenerateRangeTest, ConsecutiveIndices)
 }
 
 // ============================================================================
+// Tests for validateRangeString()
+// ============================================================================
+
+TEST(ValidateRangeStringTest, ValidStrings)
+{
+    EXPECT_TRUE(validateRangeString("1"));
+    EXPECT_TRUE(validateRangeString("42"));
+    EXPECT_TRUE(validateRangeString("999"));
+    EXPECT_TRUE(validateRangeString("12345"));
+    EXPECT_TRUE(validateRangeString("0"));  // Even though 0 is not a valid index, this just checks format
+}
+
+TEST(ValidateRangeStringTest, InvalidStrings)
+{
+    EXPECT_FALSE(validateRangeString(""));
+    EXPECT_FALSE(validateRangeString(" "));
+    EXPECT_FALSE(validateRangeString(" 5"));
+    EXPECT_FALSE(validateRangeString("a5"));
+    EXPECT_FALSE(validateRangeString("-5"));
+    EXPECT_FALSE(validateRangeString("+5"));
+    EXPECT_FALSE(validateRangeString(".5"));
+}
+
+// ============================================================================
+// Tests for parseRangeValue()
+// ============================================================================
+
+struct ParseRangeValueTestCase
+{
+    std::string input;
+    std::string fullInput;
+    bool expectSuccess;
+    std::size_t expectedValue;
+    std::string description;
+};
+
+class ParseRangeValueParameterizedTest : public ::testing::TestWithParam<ParseRangeValueTestCase>
+{
+};
+
+TEST_P(ParseRangeValueParameterizedTest, ParseRangeValueVariousInputs)
+{
+    const auto& testCase = GetParam();
+    const auto result = parseRangeValue(testCase.input, testCase.fullInput);
+
+    if(testCase.expectSuccess)
+    {
+        ASSERT_TRUE(result.has_value()) << "Failed for: " << testCase.description;
+        EXPECT_EQ(result.value(), testCase.expectedValue) << testCase.description;
+    }
+    else
+    {
+        EXPECT_FALSE(result.has_value()) << "Should fail for: " << testCase.description;
+    }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    ValidValues,
+    ParseRangeValueParameterizedTest,
+    ::testing::Values(
+        ParseRangeValueTestCase{"1", "1-5", true, 1, "Minimum value"},
+        ParseRangeValueTestCase{"5", "1-5", true, 5, "Small value"},
+        ParseRangeValueTestCase{"42", "42-100", true, 42, "Two digit value"},
+        ParseRangeValueTestCase{"999", "999-1000", true, 999, "Three digit value"},
+        ParseRangeValueTestCase{"12345", "12345-20000", true, 12345, "Large value"}
+    )
+);
+
+INSTANTIATE_TEST_SUITE_P(
+    InvalidValues,
+    ParseRangeValueParameterizedTest,
+    ::testing::Values(
+        ParseRangeValueTestCase{"1abc", "1abc-5", false, 0, "Trailing letters"},
+        ParseRangeValueTestCase{"1.5", "1.5-5", false, 0, "Decimal value"},
+        ParseRangeValueTestCase{"1 ", "1 -5", false, 0, "Trailing space"}
+    )
+);
+
+TEST(ParseRangeValueTest, VeryLargeNumber)
+{
+    const auto result = parseRangeValue("999999999999999999999", "999999999999999999999-1");
+    EXPECT_FALSE(result.has_value()); // Should fail due to out_of_range
+}
+
+TEST(ParseRangeValueTest, ConsecutiveCalls)
+{
+    const auto result1 = parseRangeValue("1", "1-5");
+    const auto result2 = parseRangeValue("42", "42-100");
+    const auto result3 = parseRangeValue("999", "999-1000");
+
+    ASSERT_TRUE(result1.has_value());
+    ASSERT_TRUE(result2.has_value());
+    ASSERT_TRUE(result3.has_value());
+
+    EXPECT_EQ(result1.value(), 1);
+    EXPECT_EQ(result2.value(), 42);
+    EXPECT_EQ(result3.value(), 999);
+}
+
+// ============================================================================
 // Tests for parseRange()
 // ============================================================================
 
@@ -121,6 +221,113 @@ TEST(ParseRangeTest, VeryLargeNumbers)
     // Test with numbers that might overflow
     const auto result = parseRange("999999999999999999999-999999999999999999999");
     EXPECT_FALSE(result.has_value()); // Should fail due to out_of_range
+}
+
+// ============================================================================
+// Tests for parseSingleIndex()
+// ============================================================================
+
+struct ParseSingleIndexTestCase
+{
+    std::string input;
+    bool expectSuccess;
+    std::size_t expectedValue;
+    std::string description;
+};
+
+class ParseSingleIndexParameterizedTest : public ::testing::TestWithParam<ParseSingleIndexTestCase>
+{
+};
+
+TEST_P(ParseSingleIndexParameterizedTest, ParseSingleIndexVariousInputs)
+{
+    const auto& testCase = GetParam();
+    const auto result = parseSingleIndex(testCase.input);
+
+    if(testCase.expectSuccess)
+    {
+        ASSERT_TRUE(result.has_value()) << "Failed for: " << testCase.description;
+        EXPECT_EQ(result.value(), testCase.expectedValue) << testCase.description;
+    }
+    else
+    {
+        EXPECT_FALSE(result.has_value()) << "Should fail for: " << testCase.description;
+    }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    ValidIndices,
+    ParseSingleIndexParameterizedTest,
+    ::testing::Values(
+        ParseSingleIndexTestCase{"1", true, 1, "Minimum valid index"},
+        ParseSingleIndexTestCase{"5", true, 5, "Small index"},
+        ParseSingleIndexTestCase{"10", true, 10, "Two digit index"},
+        ParseSingleIndexTestCase{"100", true, 100, "Three digit index"},
+        ParseSingleIndexTestCase{"999", true, 999, "Large index"},
+        ParseSingleIndexTestCase{"12345", true, 12345, "Very large index"}
+    )
+);
+
+INSTANTIATE_TEST_SUITE_P(
+    InvalidIndices,
+    ParseSingleIndexParameterizedTest,
+    ::testing::Values(
+        ParseSingleIndexTestCase{"0", false, 0, "Zero index"},
+        ParseSingleIndexTestCase{"-1", false, 0, "Negative index"},
+        ParseSingleIndexTestCase{"-10", false, 0, "Large negative index"},
+        ParseSingleIndexTestCase{"", false, 0, "Empty string"},
+        ParseSingleIndexTestCase{" ", false, 0, "Single space"},
+        ParseSingleIndexTestCase{"  ", false, 0, "Multiple spaces"},
+        ParseSingleIndexTestCase{" 5", false, 0, "Leading space"},
+        ParseSingleIndexTestCase{"5 ", false, 0, "Trailing space"},
+        ParseSingleIndexTestCase{" 5 ", false, 0, "Leading and trailing spaces"},
+        ParseSingleIndexTestCase{"abc", false, 0, "Alphabetic string"},
+        ParseSingleIndexTestCase{"1abc", false, 0, "Number with trailing letters"},
+        ParseSingleIndexTestCase{"abc1", false, 0, "Letters with trailing number"},
+        ParseSingleIndexTestCase{"1.5", false, 0, "Decimal number"},
+        ParseSingleIndexTestCase{"1.0", false, 0, "Decimal with zero fraction"},
+        ParseSingleIndexTestCase{"1,5", false, 0, "Comma separator"},
+        ParseSingleIndexTestCase{"1+5", false, 0, "Plus sign"},
+        ParseSingleIndexTestCase{"1-5", false, 0, "Minus/dash (looks like range)"},
+        ParseSingleIndexTestCase{"1 5", false, 0, "Space between digits"},
+        ParseSingleIndexTestCase{"1\t5", false, 0, "Tab between digits"},
+        ParseSingleIndexTestCase{"\n5", false, 0, "Newline before number"},
+        ParseSingleIndexTestCase{"5\n", false, 0, "Newline after number"}
+    )
+);
+
+TEST(ParseSingleIndexTest, VeryLargeNumber)
+{
+    // Test with a number that might overflow
+    const auto result = parseSingleIndex("999999999999999999999");
+    EXPECT_FALSE(result.has_value()); // Should fail due to out_of_range
+}
+
+TEST(ParseSingleIndexTest, ConsecutiveCalls)
+{
+    // Test that function doesn't maintain state between calls
+    const auto result1 = parseSingleIndex("1");
+    const auto result2 = parseSingleIndex("42");
+    const auto result3 = parseSingleIndex("100");
+
+    ASSERT_TRUE(result1.has_value());
+    ASSERT_TRUE(result2.has_value());
+    ASSERT_TRUE(result3.has_value());
+
+    EXPECT_EQ(result1.value(), 1);
+    EXPECT_EQ(result2.value(), 42);
+    EXPECT_EQ(result3.value(), 100);
+}
+
+TEST(ParseSingleIndexTest, BoundaryValue)
+{
+    // Test the boundary at 1
+    const auto resultZero = parseSingleIndex("0");
+    const auto resultOne = parseSingleIndex("1");
+
+    EXPECT_FALSE(resultZero.has_value());
+    ASSERT_TRUE(resultOne.has_value());
+    EXPECT_EQ(resultOne.value(), 1);
 }
 
 // ============================================================================

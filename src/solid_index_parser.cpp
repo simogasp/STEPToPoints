@@ -15,55 +15,108 @@ auto generateRange(std::size_t start, std::size_t end) -> std::vector<std::size_
 }
 
 
+auto validateRangeString(const std::string& str) -> bool
+{
+    return !str.empty() && std::isdigit(static_cast<unsigned char>(str[0]));
+}
+
+
+auto parseRangeValue(const std::string& str, const std::string& fullInput) -> std::optional<std::size_t>
+{
+    try
+    {
+        std::size_t pos = 0;
+        const auto value = std::stoul(str, &pos);
+
+        // Ensure the entire string was consumed (no trailing characters)
+        if(pos != str.length())
+        {
+            std::cerr << "Invalid range format: " << fullInput << "\n";
+            return std::nullopt;
+        }
+
+        return value;
+    }
+    catch(const std::invalid_argument&)
+    {
+        std::cerr << "Invalid range format: " << fullInput << "\n";
+    }
+    catch(const std::out_of_range&)
+    {
+        std::cerr << "Range values out of bounds: " << fullInput << "\n";
+    }
+    return std::nullopt;
+}
+
+
 auto parseRange(const std::string& sel) -> std::optional<std::pair<std::size_t, std::size_t>>
 {
-    if(const auto dashPos = sel.find('-'); dashPos != std::string::npos && dashPos > 0)
+    const auto dashPos = sel.find('-');
+    if(dashPos == std::string::npos || dashPos == 0)
     {
-        try
+        return std::nullopt;
+    }
+
+    const auto startStr = sel.substr(0, dashPos);
+    const auto endStr = sel.substr(dashPos + 1);
+
+    if(!validateRangeString(startStr) || !validateRangeString(endStr))
+    {
+        std::cerr << "Invalid range format: " << sel << "\n";
+        return std::nullopt;
+    }
+
+    const auto start = parseRangeValue(startStr, sel);
+    const auto end = parseRangeValue(endStr, sel);
+
+    if(!start.has_value() || !end.has_value())
+    {
+        return std::nullopt;
+    }
+
+    if(start.value() >= 1 && start.value() <= end.value())
+    {
+        return std::make_pair(start.value(), end.value());
+    }
+
+    return std::nullopt;
+}
+
+
+auto parseSingleIndex(const std::string& sel) -> std::optional<std::size_t>
+{
+    // Check for empty string or leading whitespace/non-digit
+    if(sel.empty() || !std::isdigit(static_cast<unsigned char>(sel[0])))
+    {
+        std::cerr << "Invalid index provided: " << sel << "\n";
+        return std::nullopt;
+    }
+
+    try
+    {
+        std::size_t pos = 0;
+        const auto index = std::stoul(sel, &pos);
+
+        // Ensure the entire string was consumed (no trailing characters)
+        if(pos != sel.length())
         {
-            const auto startStr = sel.substr(0, dashPos);
-            const auto endStr = sel.substr(dashPos + 1);
-
-            // Check for empty strings or strings with only whitespace
-            if(startStr.empty() || endStr.empty())
-            {
-                std::cerr << "Invalid range format: " << sel << "\n";
-                return std::nullopt;
-            }
-
-            // Check for leading/trailing whitespace or non-digit characters at start
-            if(!std::isdigit(static_cast<unsigned char>(startStr[0])) ||
-               !std::isdigit(static_cast<unsigned char>(endStr[0])))
-            {
-                std::cerr << "Invalid range format: " << sel << "\n";
-                return std::nullopt;
-            }
-
-            std::size_t startPos = 0;
-            std::size_t endPos = 0;
-            const auto start = std::stoul(startStr, &startPos);
-            const auto end = std::stoul(endStr, &endPos);
-
-            // Ensure the entire string was consumed (no trailing characters)
-            if(startPos != startStr.length() || endPos != endStr.length())
-            {
-                std::cerr << "Invalid range format: " << sel << "\n";
-                return std::nullopt;
-            }
-
-            if(start >= 1 && start <= end)
-            {
-                return std::make_pair(start, end);
-            }
+            std::cerr << "Invalid index provided: " << sel << "\n";
+            return std::nullopt;
         }
-        catch(const std::invalid_argument&)
+
+        if(index >= 1)
         {
-            std::cerr << "Invalid range format: " << sel << "\n";
+            return index;
         }
-        catch(const std::out_of_range&)
-        {
-            std::cerr << "Range values out of bounds: " << sel << "\n";
-        }
+        std::cerr << "Index must be at least 1: " << sel << "\n";
+    }
+    catch(const std::invalid_argument&)
+    {
+        std::cerr << "Invalid index provided: " << sel << "\n";
+    }
+    catch(const std::out_of_range&)
+    {
+        std::cerr << "Index out of range: " << sel << "\n";
     }
     return std::nullopt;
 }
@@ -85,39 +138,17 @@ auto parseSolidIndex(const std::string& sel, std::size_t maxIndex) -> std::optio
         return generateRange(start, end);
     }
 
-    try
+    // Try parsing as single index
+    if(const auto index = parseSingleIndex(sel); index.has_value())
     {
-        // Check for empty string or leading whitespace/non-digit
-        if(sel.empty() || !std::isdigit(static_cast<unsigned char>(sel[0])))
+        if(index.value() <= maxIndex)
         {
-            std::cerr << "Invalid index provided: " << sel << "\n";
-            return std::nullopt;
-        }
-
-        std::size_t pos = 0;
-        const auto index = std::stoul(sel, &pos);
-
-        // Ensure the entire string was consumed (no trailing characters)
-        if(pos != sel.length())
-        {
-            std::cerr << "Invalid index provided: " << sel << "\n";
-            return std::nullopt;
-        }
-
-        if(index >= 1 && index <= maxIndex)
-        {
-            return {{index - 1}};
+            return {{index.value() - 1}};
         }
         std::cerr << "Index out of valid range: " << sel << "\n";
     }
-    catch(const std::invalid_argument&)
-    {
-        std::cerr << "Invalid index provided: " << sel << "\n";
-    }
-    catch(const std::out_of_range&)
-    {
-        std::cerr << "Index out of range: " << sel << "\n";
-    }
+
     return std::nullopt;
 }
+
 
