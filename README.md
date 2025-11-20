@@ -1,5 +1,6 @@
 # STEPToPoints
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/86fe3d55b6934d8fa95d6e03bed9f103)](https://app.codacy.com/gh/simogasp/STEPToPoints?utm_source=github.com&utm_medium=referral&utm_content=simogasp/STEPToPoints&utm_campaign=Badge_Grade)
 [![CI-Build](https://github.com/simogasp/STEPToPoints/actions/workflows/build.yml/badge.svg)](https://github.com/simogasp/STEPToPoints/actions/workflows/build.yml)
 
 ## Description
