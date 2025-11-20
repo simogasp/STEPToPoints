@@ -1,4 +1,5 @@
 #include "solid_index_parser.hpp"
+#include <cctype>
 #include <exception>
 #include <iostream>
 
@@ -20,8 +21,35 @@ auto parseRange(const std::string& sel) -> std::optional<std::pair<std::size_t, 
     {
         try
         {
-            const auto start = std::stoul(sel.substr(0, dashPos));
-            const auto end = std::stoul(sel.substr(dashPos + 1));
+            const auto startStr = sel.substr(0, dashPos);
+            const auto endStr = sel.substr(dashPos + 1);
+
+            // Check for empty strings or strings with only whitespace
+            if(startStr.empty() || endStr.empty())
+            {
+                std::cerr << "Invalid range format: " << sel << "\n";
+                return std::nullopt;
+            }
+
+            // Check for leading/trailing whitespace or non-digit characters at start
+            if(!std::isdigit(static_cast<unsigned char>(startStr[0])) ||
+               !std::isdigit(static_cast<unsigned char>(endStr[0])))
+            {
+                std::cerr << "Invalid range format: " << sel << "\n";
+                return std::nullopt;
+            }
+
+            std::size_t startPos = 0;
+            std::size_t endPos = 0;
+            const auto start = std::stoul(startStr, &startPos);
+            const auto end = std::stoul(endStr, &endPos);
+
+            // Ensure the entire string was consumed (no trailing characters)
+            if(startPos != startStr.length() || endPos != endStr.length())
+            {
+                std::cerr << "Invalid range format: " << sel << "\n";
+                return std::nullopt;
+            }
 
             if(start >= 1 && start <= end)
             {
@@ -59,8 +87,24 @@ auto parseSolidIndex(const std::string& sel, std::size_t maxIndex) -> std::optio
 
     try
     {
-        if(const auto index = std::stoul(sel);
-            index >= 1 && index <= maxIndex)
+        // Check for empty string or leading whitespace/non-digit
+        if(sel.empty() || !std::isdigit(static_cast<unsigned char>(sel[0])))
+        {
+            std::cerr << "Invalid index provided: " << sel << "\n";
+            return std::nullopt;
+        }
+
+        std::size_t pos = 0;
+        const auto index = std::stoul(sel, &pos);
+
+        // Ensure the entire string was consumed (no trailing characters)
+        if(pos != sel.length())
+        {
+            std::cerr << "Invalid index provided: " << sel << "\n";
+            return std::nullopt;
+        }
+
+        if(index >= 1 && index <= maxIndex)
         {
             return {{index - 1}};
         }
