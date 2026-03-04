@@ -42,6 +42,8 @@ Generating point clouds for selected solids of the file:
 STEPToPoints -i <step file> -o <output file> -g <sampling distance> -s <solid1>,<solid2>,<...>`
 ```
 
+Note that the selection of solids can be done by name or index (comma separated list, index starts with 1). For the indices, the range is also supported, e.g. `1-3` for the first three solids.
+
 Following the help text from the command line:
 
 ```bash
@@ -53,8 +55,7 @@ Usage:
   -i, --in arg        Input file
   -o, --out arg       Output file (.obj, .ply, .xyz)
   -c, --content       List content (solids)
-  -s, --select arg    Select solids by name or index (comma seperated list,
-                      index starts with 1)
+  -s, --select arg    Select solids by name or index (comma separated list, index starts with 1). For the indices, the range is also supported, e.g. `1-3` for the first three solids.
   -g, --sampling arg  Sampling distance
   -b, --binary        Write binary file (only for .ply files)
   -h, --help          Print usage

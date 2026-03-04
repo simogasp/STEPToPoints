@@ -587,7 +587,7 @@ int main(int argc, char* argv[])
     cxxopts::value<std::string>())
     ("c,content", "List content (solids)")
     ("s,select",
-    "Select solids by name or index (comma seperated list, index starts with 1)",
+    "Select solids by name or index (comma separated list, index starts with 1). For the indices, the range is also supported, e.g. `1-3` for the first three solids.",
     cxxopts::value<std::vector<std::string>>())
     ("g,sampling", "Sampling distance", cxxopts::value<double>())
     ("b,binary", "Write binary file (only for .ply files)", cxxopts::value<bool>()->default_value("false"))
