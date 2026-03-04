@@ -1,6 +1,7 @@
 # STEPToPoints
 
 [![CI-Build](https://github.com/simogasp/STEPToPoints/actions/workflows/build.yml/badge.svg)](https://github.com/simogasp/STEPToPoints/actions/workflows/build.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/5f09c1aeeaad4f1093d7e3af8fe68be0)](https://app.codacy.com/gh/simogasp/STEPToPoints/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 ## Description
 The program STEPToPoints is a command line utility to generate point clouds out of solids contained in STEP files.
