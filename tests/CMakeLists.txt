@@ -37,5 +37,8 @@ target_compile_features(solid_index_parser_tests PRIVATE ${MY_CXX_FEATURE})
 
 # Register tests with CTest
 include(GoogleTest)
-gtest_discover_tests(solid_index_parser_tests)
+gtest_discover_tests(solid_index_parser_tests
+    DISCOVERY_MODE POST_BUILD
+    DISCOVERY_TIMEOUT 30
+)
 
