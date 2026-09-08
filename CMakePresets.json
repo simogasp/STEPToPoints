@@ -85,13 +85,15 @@
       "name": "vcpkg-release",
       "configurePreset": "vcpkg-release",
       "displayName": "Release Build",
-      "description": "Build in Release mode"
+      "description": "Build in Release mode with vcpkg",
+      "configuration": "Release"
     },
     {
       "name": "vcpkg-debug",
       "configurePreset": "vcpkg-debug",
       "displayName": "Debug Build",
-      "description": "Build in Debug mode"
+      "description": "Build in Debug mode with vcpkg",
+      "configuration": "Debug"
     }
   ],
   "testPresets": [
