@@ -27,7 +27,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Install Linux dependencies
       if: runner.os == 'Linux'
@@ -36,7 +36,7 @@ jobs:
         sudo apt-get install -y libx11-dev libgl1-mesa-dev libglu1-mesa-dev
 
     - name: Cache vcpkg
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: |
           ${{ github.workspace }}/vcpkg
