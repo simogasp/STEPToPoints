@@ -27,7 +27,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Install Linux dependencies
       if: runner.os == 'Linux'
@@ -36,7 +36,7 @@ jobs:
         sudo apt-get install -y libx11-dev libgl1-mesa-dev libglu1-mesa-dev
 
     - name: Cache vcpkg
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: |
           ${{ github.workspace }}/vcpkg
@@ -47,9 +47,6 @@ jobs:
 
     - name: Set up vcpkg
       uses: lukka/run-vcpkg@v11
-      with:
-        # v2025.09.17
-        vcpkgGitCommitId: '4334d8b4c8916018600212ab4dd4bbdc343065d1'
 
     - name: Build (Release)
       uses: lukka/run-cmake@v10
